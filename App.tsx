@@ -28,8 +28,9 @@ const App: React.FC = () => {
       let errorMessage = "데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.";
       
       // 사용자에게 더 명확한 에러 메시지 제공
-      if (err.message.includes("API Key")) {
-        errorMessage = "API 키가 설정되지 않았습니다. 배포 환경의 환경변수(API_KEY)를 확인해주세요.";
+      // 'API 키' 관련 에러라면, 서비스에서 던진 상세 메시지를 그대로 보여줍니다.
+      if (err.message && (err.message.includes("API 키") || err.message.includes("API Key") || err.message.includes("환경변수"))) {
+        errorMessage = err.message;
       } else if (err.message) {
         errorMessage = err.message;
       }
@@ -134,7 +135,7 @@ const App: React.FC = () => {
                       <div className="flex items-center gap-2 mb-1 font-bold">
                         <Info size={24} /> 오류 발생
                       </div>
-                      {error}
+                      <div className="whitespace-pre-wrap">{error}</div>
                   </div>
               )}
             </section>

@@ -3,41 +3,35 @@ import { MonthlyAnalysis } from "../types";
 
 // Helper to ensure API Key exists
 const getApiKey = (): string => {
-  // 중요: 번들러(Webpack, Vite 등)가 빌드 타임에 환경 변수를 실제 값으로 치환할 수 있도록
-  // process.env 객체를 변수에 담지 않고, 각 키에 '직접' 접근해야 합니다.
-  
-  // 1. Check standard React/Vercel environment variables directly
-  // @ts-ignore
-  const reactAppKey = process.env.REACT_APP_API_KEY;
-  // @ts-ignore
-  const viteKey = process.env.VITE_API_KEY;
-  // @ts-ignore
-  const nextKey = process.env.NEXT_PUBLIC_API_KEY;
-  // @ts-ignore
-  const genericKey = process.env.API_KEY;
-
-  if (reactAppKey) return reactAppKey;
-  if (viteKey) return viteKey;
-  if (nextKey) return nextKey;
-  if (genericKey) return genericKey;
-
-  // 2. Check Vite's import.meta.env (Fallback)
+  // 1. Check Vite environment (Most likely scenario for modern React apps)
   try {
     // @ts-ignore
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+    if (import.meta && import.meta.env && import.meta.env.VITE_API_KEY) {
       // @ts-ignore
       return import.meta.env.VITE_API_KEY;
     }
   } catch (e) {
-    // Ignore errors in environments where import.meta is not defined
+    // Ignore if import.meta is not available
   }
+
+  // 2. Check standard React/Node environment variables
+  // @ts-ignore
+  const reactAppKey = typeof process !== 'undefined' ? process.env.REACT_APP_API_KEY : undefined;
+  // @ts-ignore
+  const nextKey = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_KEY : undefined;
+  // @ts-ignore
+  const genericKey = typeof process !== 'undefined' ? process.env.API_KEY : undefined;
+
+  if (reactAppKey) return reactAppKey;
+  if (nextKey) return nextKey;
+  if (genericKey) return genericKey;
 
   // If we reach here, no key was found.
   throw new Error(
     "API 키를 찾을 수 없습니다.\n" +
-    "Vercel > Settings > Environment Variables 에서\n" +
-    "Key 이름을 'REACT_APP_API_KEY'로 변경하여 등록했는지 확인해주세요.\n" +
-    "(변경 후 'Deployments' 탭에서 반드시 Redeploy(재배포) 해야 적용됩니다)"
+    "현재 배포 환경(Vite)에서는 'REACT_APP_' 접두사가 작동하지 않습니다.\n\n" +
+    "Vercel 환경변수 이름을 'VITE_API_KEY'로 변경해주세요.\n" +
+    "(변경 후 반드시 'Redeploy'를 해야 적용됩니다)"
   );
 };
 
