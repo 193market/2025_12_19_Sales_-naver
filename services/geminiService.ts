@@ -3,10 +3,19 @@ import { MonthlyAnalysis } from "../types";
 
 // Helper to ensure API Key exists
 const getApiKey = (): string => {
-  const key = process.env.API_KEY;
+  // In a browser environment without a bundler polyfill, process might be undefined unless polyfilled.
+  // The index.html polyfill ensures window.process exists, but env might be empty.
+  let key = '';
+  try {
+    key = process.env.API_KEY || '';
+  } catch (e) {
+    // This catches ReferenceError if process is not defined
+    console.warn("process.env access failed", e);
+  }
+
   if (!key) {
-    console.error("API Key is missing. Please check your environment variables.");
-    throw new Error("API Key is missing");
+    console.error("API Key is missing. Please check your environment variables in Vercel Settings.");
+    throw new Error("API Key is missing. (Vercel 환경변수 API_KEY를 설정해주세요)");
   }
   return key;
 };

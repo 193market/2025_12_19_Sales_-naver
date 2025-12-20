@@ -18,16 +18,24 @@ const App: React.FC = () => {
   const performAnalysis = async (month: number, category: string) => {
     setIsLoading(true);
     setError(null);
-    // Don't set AppState here if we are already in RESULTS, to avoid full screen flicker/reset
-    // But if coming from HOME, we set to ANALYZING via the wrapper.
     
     try {
       const data = await fetchMarketAnalysis(month, category);
       setAnalysisResult(data);
       setAppState(AppState.RESULTS);
-    } catch (err) {
-      setError("데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.");
-      // Keep state as is if in results, or go back to home if initial
+    } catch (err: any) {
+      console.error("Analysis Error:", err);
+      let errorMessage = "데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.";
+      
+      // 사용자에게 더 명확한 에러 메시지 제공
+      if (err.message.includes("API Key")) {
+        errorMessage = "API 키가 설정되지 않았습니다. 배포 환경의 환경변수(API_KEY)를 확인해주세요.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+      setAppState(AppState.HOME); // 에러 발생 시 홈으로 돌아가서 에러 메시지 표시
     } finally {
       setIsLoading(false);
     }
@@ -122,8 +130,11 @@ const App: React.FC = () => {
               </div>
               
               {error && (
-                  <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-lg text-lg flex items-center justify-center gap-2">
-                      <Info size={24} /> {error}
+                  <div className="mt-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 text-base font-medium flex flex-col items-center justify-center text-center">
+                      <div className="flex items-center gap-2 mb-1 font-bold">
+                        <Info size={24} /> 오류 발생
+                      </div>
+                      {error}
                   </div>
               )}
             </section>

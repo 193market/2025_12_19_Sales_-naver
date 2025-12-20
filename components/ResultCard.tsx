@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ProductRecommendation } from '../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingUp, Users, Lightbulb, ShoppingCart, Coins, Copy, Check, FileText, BarChart2, FileEdit, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Lightbulb, ShoppingCart, Coins, Copy, Check, FileText, BarChart2, FileEdit, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
 
 interface ResultCardProps {
   item: ProductRecommendation;
@@ -16,9 +16,16 @@ const ResultCard: React.FC<ResultCardProps> = ({ item }) => {
     { name: '경쟁강도', value: item.competitionLevel, color: '#f59e0b' }, // Amber
   ];
 
-  const handleAmazonSearch = () => {
+  // 11번가 아마존 탭으로 바로 이동 (deliveryCd=AMAZON 파라미터 추가)
+  const handle11stAmazonSearch = () => {
+    // Search with Korean product name first as it often yields better results in 11st local search, 
+    // but if we want strict Amazon global, english keyword might be better?
+    // Usually 11st handles Korean keywords well for Amazon products.
+    // Using productName (Korean) + englishKeyword might be too specific. 
+    // Let's try English keyword first for Amazon sourcing accuracy, or Korean if English is missing.
     const query = encodeURIComponent(item.englishKeyword || item.productName);
-    window.open(`https://search.11st.co.kr/Search.tmall?kwd=${query}`, '_blank');
+    // &deliveryCd=AMAZON : 11번가 내 아마존 글로벌 스토어 상품만 필터링
+    window.open(`https://search.11st.co.kr/Search.tmall?kwd=${query}&deliveryCd=AMAZON`, '_blank');
   };
 
   const handleNaverSearch = () => {
@@ -373,20 +380,20 @@ const ResultCard: React.FC<ResultCardProps> = ({ item }) => {
       </div>
 
       {/* Footer Buttons */}
-      <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
+      <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
         <button 
             onClick={handleNaverSearch}
-            className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-3 rounded-xl font-bold transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-4 rounded-xl font-bold transition-colors text-lg shadow-sm"
         >
             <SearchIcon />
-            네이버 시세
+            네이버 시세 확인
         </button>
         <button 
-            onClick={handleAmazonSearch}
-            className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-bold transition-colors shadow-sm"
+            onClick={handle11stAmazonSearch}
+            className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl font-bold transition-colors shadow-sm text-lg"
         >
-            <ShoppingCart size={20} />
-            11번가 구매하기
+            <ShoppingCart size={22} />
+            11번가 아마존 검색
         </button>
       </div>
     </div>

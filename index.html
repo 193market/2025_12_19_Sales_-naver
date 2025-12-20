@@ -11,6 +11,12 @@
         font-family: 'Noto Sans KR', sans-serif;
       }
     </style>
+    <script>
+      // Browser Polyfill for process.env to prevent ReferenceError in Vercel Static Deployments
+      if (typeof process === 'undefined') {
+        window.process = { env: {} };
+      }
+    </script>
   <script type="importmap">
 {
   "imports": {
