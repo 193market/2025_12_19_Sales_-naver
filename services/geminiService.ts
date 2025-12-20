@@ -3,39 +3,42 @@ import { MonthlyAnalysis } from "../types";
 
 // Helper to ensure API Key exists
 const getApiKey = (): string => {
-  let key = '';
+  // 중요: 번들러(Webpack, Vite 등)가 빌드 타임에 환경 변수를 실제 값으로 치환할 수 있도록
+  // process.env 객체를 변수에 담지 않고, 각 키에 '직접' 접근해야 합니다.
   
+  // 1. Check standard React/Vercel environment variables directly
+  // @ts-ignore
+  const reactAppKey = process.env.REACT_APP_API_KEY;
+  // @ts-ignore
+  const viteKey = process.env.VITE_API_KEY;
+  // @ts-ignore
+  const nextKey = process.env.NEXT_PUBLIC_API_KEY;
+  // @ts-ignore
+  const genericKey = process.env.API_KEY;
+
+  if (reactAppKey) return reactAppKey;
+  if (viteKey) return viteKey;
+  if (nextKey) return nextKey;
+  if (genericKey) return genericKey;
+
+  // 2. Check Vite's import.meta.env (Fallback)
   try {
-    // 1. Try standard process.env variants
-    // Vercel/React apps often strip keys that don't start with REACT_APP_ or VITE_
-    const env = process.env as any;
-    
-    key = env.REACT_APP_API_KEY || 
-          env.VITE_API_KEY || 
-          env.NEXT_PUBLIC_API_KEY || 
-          env.API_KEY || 
-          '';
-
-    // 2. Try Vite's import.meta.env if available (and not found yet)
-    // Note: We use 'any' casting to avoid TS errors in non-Vite setups
-    if (!key && typeof import.meta !== 'undefined' && (import.meta as any).env) {
-      key = (import.meta as any).env.VITE_API_KEY || '';
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+      // @ts-ignore
+      return import.meta.env.VITE_API_KEY;
     }
-
   } catch (e) {
-    console.warn("Environment access failed", e);
+    // Ignore errors in environments where import.meta is not defined
   }
 
-  if (!key) {
-    console.error("API Key is missing. Checked: REACT_APP_API_KEY, VITE_API_KEY, API_KEY");
-    // Throwing a very specific error message for the user
-    throw new Error(
-      "API 키를 찾을 수 없습니다.\n" +
-      "Vercel 환경변수 이름을 'REACT_APP_API_KEY'로 변경해서 다시 등록해주세요.\n" +
-      "(보안상 접두사가 없는 변수는 차단됩니다)"
-    );
-  }
-  return key;
+  // If we reach here, no key was found.
+  throw new Error(
+    "API 키를 찾을 수 없습니다.\n" +
+    "Vercel > Settings > Environment Variables 에서\n" +
+    "Key 이름을 'REACT_APP_API_KEY'로 변경하여 등록했는지 확인해주세요.\n" +
+    "(변경 후 'Deployments' 탭에서 반드시 Redeploy(재배포) 해야 적용됩니다)"
+  );
 };
 
 const analysisSchema: Schema = {
@@ -131,7 +134,7 @@ const analysisSchema: Schema = {
 const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
   return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
-          reject(new Error("분석 시간이 너무 오래 걸립니다. (20초 초과)\nAPI 키를 확인하거나 잠시 후 다시 시도해주세요."));
+          reject(new Error("분석 시간이 너무 오래 걸립니다. (20초 초과)\n잠시 후 다시 시도해주세요."));
       }, ms);
 
       promise
