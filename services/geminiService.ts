@@ -128,7 +128,7 @@ const analysisSchema: Schema = {
 const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
   return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
-          reject(new Error("분석 시간이 너무 오래 걸립니다. (20초 초과)\n잠시 후 다시 시도해주세요."));
+          reject(new Error(`분석 시간이 초과되었습니다 (${ms/1000}초).\n일시적인 AI 서버 지연일 수 있으니 다시 시도해주세요.`));
       }, ms);
 
       promise
@@ -158,7 +158,7 @@ export const fetchMarketAnalysis = async (month: number, category: string): Prom
     3. **FOCUS ON**: Industrial goods (Tech, Fashion, Camping, Tools, Home).
     
     Requirements:
-    1. **Generate 8 Product Recommendations**.
+    1. **Generate 5 Best Product Recommendations** (Quality over Quantity).
     2. **Price Analysis**: Estimate Naver Price vs 11st Amazon Price (KRW).
     3. **Marketing Assets**: SEO Title, Hashtags, Hook.
     4. **Detailed Page Content**: Prologue, Points, Specs, FAQ.
@@ -175,7 +175,8 @@ export const fetchMarketAnalysis = async (month: number, category: string): Prom
   `;
 
   try {
-    // Wrap API call with 20s timeout
+    // Increased timeout to 60 seconds (60000ms)
+    // Decreased product count to 5 to ensure it fits within the time limit
     const response = await withTimeout<GenerateContentResponse>(
       ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -186,7 +187,7 @@ export const fetchMarketAnalysis = async (month: number, category: string): Prom
           systemInstruction: "You are a smart store partner. Prioritize user safety. Warn them about trademark risks.",
         },
       }),
-      20000 // 20 seconds timeout
+      60000 
     );
 
     if (response.text) {
