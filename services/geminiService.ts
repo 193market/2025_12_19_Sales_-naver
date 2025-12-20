@@ -3,19 +3,37 @@ import { MonthlyAnalysis } from "../types";
 
 // Helper to ensure API Key exists
 const getApiKey = (): string => {
-  // In a browser environment without a bundler polyfill, process might be undefined unless polyfilled.
-  // The index.html polyfill ensures window.process exists, but env might be empty.
   let key = '';
+  
   try {
-    key = process.env.API_KEY || '';
+    // 1. Try standard process.env variants
+    // Vercel/React apps often strip keys that don't start with REACT_APP_ or VITE_
+    const env = process.env as any;
+    
+    key = env.REACT_APP_API_KEY || 
+          env.VITE_API_KEY || 
+          env.NEXT_PUBLIC_API_KEY || 
+          env.API_KEY || 
+          '';
+
+    // 2. Try Vite's import.meta.env if available (and not found yet)
+    // Note: We use 'any' casting to avoid TS errors in non-Vite setups
+    if (!key && typeof import.meta !== 'undefined' && (import.meta as any).env) {
+      key = (import.meta as any).env.VITE_API_KEY || '';
+    }
+
   } catch (e) {
-    // This catches ReferenceError if process is not defined
-    console.warn("process.env access failed", e);
+    console.warn("Environment access failed", e);
   }
 
   if (!key) {
-    console.error("API Key is missing. Please check your environment variables in Vercel Settings.");
-    throw new Error("API Key is missing. (Vercel 환경변수 API_KEY를 설정해주세요)");
+    console.error("API Key is missing. Checked: REACT_APP_API_KEY, VITE_API_KEY, API_KEY");
+    // Throwing a very specific error message for the user
+    throw new Error(
+      "API 키를 찾을 수 없습니다.\n" +
+      "Vercel 환경변수 이름을 'REACT_APP_API_KEY'로 변경해서 다시 등록해주세요.\n" +
+      "(보안상 접두사가 없는 변수는 차단됩니다)"
+    );
   }
   return key;
 };
