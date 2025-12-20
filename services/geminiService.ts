@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type, Schema, GenerateContentResponse } from "@google/genai";
 import { MonthlyAnalysis } from "../types";
 
 // Helper to ensure API Key exists
@@ -109,6 +109,25 @@ const analysisSchema: Schema = {
   required: ["month", "summary", "recommendations"],
 };
 
+// Timeout Wrapper
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
+  return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+          reject(new Error("분석 시간이 너무 오래 걸립니다. (20초 초과)\nAPI 키를 확인하거나 잠시 후 다시 시도해주세요."));
+      }, ms);
+
+      promise
+          .then((value) => {
+              clearTimeout(timer);
+              resolve(value);
+          })
+          .catch((reason) => {
+              clearTimeout(timer);
+              reject(reason);
+          });
+  });
+};
+
 export const fetchMarketAnalysis = async (month: number, category: string): Promise<MonthlyAnalysis> => {
   const apiKey = getApiKey();
   const ai = new GoogleGenAI({ apiKey });
@@ -141,15 +160,19 @@ export const fetchMarketAnalysis = async (month: number, category: string): Prom
   `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: analysisSchema,
-        systemInstruction: "You are a smart store partner. Prioritize user safety. Warn them about trademark risks.",
-      },
-    });
+    // Wrap API call with 20s timeout
+    const response = await withTimeout<GenerateContentResponse>(
+      ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: analysisSchema,
+          systemInstruction: "You are a smart store partner. Prioritize user safety. Warn them about trademark risks.",
+        },
+      }),
+      20000 // 20 seconds timeout
+    );
 
     if (response.text) {
       return JSON.parse(response.text) as MonthlyAnalysis;
